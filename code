@@ -1,0 +1,141 @@
+%Hive
+
+CREATE TABLE apachelog (
+HOST STRING,  
+IDENTITY STRING,  
+WUSER STRING,  
+WTIME STRING,  
+request STRING,  
+status STRING,  
+SIZE STRING) 
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.RegexSerDe'
+WITH SERDEPROPERTIES 
+("input.regex" = "([^ ]*) ([^ ]*) ([^ ]*) (-|\\[[^\\]]*\\]) ([^ \"]*|\"[^\"]*\") (-|[0-9]*) (-|[0-9]*)?")
+STORED AS TEXTFILE;
+
+
+========================================
+
+%Hive
+
+LOAD DATA INPATH '/user/dataengineer/filesdata/Web_log' INTO TABLE apachelog;
+=====================================
+%Hive
+
+select * from apachelog;
+
+========================================
+%Hive
+
+select 
+min(size) as Minimum,
+max(size) as Maximum,
+avg(size) as Average
+from apachelog;
+==========================================
+%Hive
+
+select 
+status,
+count(status) as countbystatus
+from apachelog group by status order by status asc;
+===================================================
+
+%Hive
+
+select 
+host, 
+count(host)  as CountofHost 
+from apachelog group by Host order by CountofHost desc;  
+==========================================
+%Hive
+
+select 
+regexp_extract(request, '^.*"\\w+\\s+([^\\s]+)\\s+HTTP.*"', 1) as path, 
+count(regexp_extract(request, '^.*"\\w+\\s+([^\\s]+)\\s+HTTP.*"', 1)) as Countofpath 
+from apachelog group by regexp_extract(request, '^.*"\\w+\\s+([^\\s]+)\\s+HTTP.*"', 1)  order by Countofpath desc;  
+===================================================
+%Hive
+
+select 
+regexp_extract(request, '^.*"\\w+\\s+([^\\s]+)\\s+HTTP.*"', 1) as path, 
+count(regexp_extract(request, '^.*"\\w+\\s+([^\\s]+)\\s+HTTP.*"', 1)) as Countofpath, 
+status
+from apachelog 
+where status != 200
+group by regexp_extract(request, '^.*"\\w+\\s+([^\\s]+)\\s+HTTP.*"', 1),status
+order by Countofpath desc limit 10;  
+=====================================================
+%Hive
+
+select
+distinct(Host)  as Host
+from apachelog; 
+=========================
+%Hive
+
+select 
+count(distinct(Host)) as CountofUniqueHost
+from apachelog; 
+==================================
+%Hive
+
+select
+split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[1] as datelimited
+from 
+apachelog group by split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[1]
+===============================================
+%Hive
+
+select
+count(host) as Host,
+split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0] as datelimited
+from 
+apachelog group by split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0] order by split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0] asc
+========================
+%Hive
+
+
+select
+host,
+count(request)  as NumberofRequest,
+split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0] as datelimited
+from 
+apachelog group by split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0], Host order by split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0] asc
+========================================
+%Hive 
+
+select
+status,
+count(status) as countofstatus
+from apachelog where status = 404 group by status;
+                         
+=================================
+%Hive
+
+select
+regexp_extract(request, '^.*"\\w+\\s+([^\\s]+)\\s+HTTP.*"', 1) as path, 
+status,
+count(status)
+from apachelog where status = 404 group by status, regexp_extract(request, '^.*"\\w+\\s+([^\\s]+)\\s+HTTP.*"', 1) order by count(status) desc limit 20;
+======================================
+%Hive
+
+select
+status,
+count(status) as countofstatus,
+split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0] as datelimited
+from 
+apachelog where status = 404
+group by split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0], status order by split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0];
+===================================
+%Hive
+
+select
+status,
+count(status) as countofstatus,
+split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0] as datelimited
+from 
+apachelog where status = 404
+group by split(regexp_extract(WTIME, '^.*\\[(\\d\\d/\\w{3}/\\d{4}:\\d{2}:\\d{2}:\\d{2} -\\d{4})]', 1),':')[0], status order by count(status) desc limit 5;
+=======================================
